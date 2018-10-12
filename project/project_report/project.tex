@@ -1,0 +1,334 @@
+\documentclass[12pt,draftclsnofoot,onecolumn]{IEEEtran}
+
+%\renewcommand{\baselinestretch}{1.75}
+\textwidth 6.8in
+\oddsidemargin -0.4cm
+\usepackage{bm}
+\usepackage{amssymb,amsmath,color,graphicx}
+\usepackage{subfigure}
+ \usepackage{epstopdf}
+\usepackage{graphicx}
+\usepackage{caption}
+\usepackage{cite}
+\usepackage[english]{babel}
+\usepackage{verbatim}
+\usepackage{algorithm}
+\usepackage{algorithmic}
+\usepackage{array}
+\usepackage{epstopdf}
+%\hyphenation{op-tical net-works semi-conduc-tor IEEEtran}
+\DeclareMathOperator*{\argmax}{arg\,max}
+\DeclareMathOperator*{\maxi}{maximize}
+\DeclareMathOperator*{\mini}{minimize}
+\DeclareMathOperator*{\st}{subject\,to}
+\newtheorem{theorem}{Theorem}
+\newtheorem{assumption}{Assumption}
+\newtheorem{acknowledgement}[theorem]{Acknowledgement}
+\newtheorem{axiom}[theorem]{Axiom}
+\newtheorem{case}[theorem]{Case}
+\newtheorem{claim}[theorem]{Claim}
+\newtheorem{conclusion}[theorem]{Conclusion}
+\newtheorem{condition}[theorem]{Condition}
+\newtheorem{conjecture}[theorem]{Conjecture}
+\newtheorem{corollary}{Corollary}
+\newtheorem{criterion}[theorem]{Criterion}
+\newtheorem{definition}{Definition}
+\newtheorem{example}[theorem]{Example}
+\newtheorem{exercise}[theorem]{Exercise}
+\newtheorem{lemma}{Lemma}
+\newtheorem{notation}[theorem]{Notation}
+\newtheorem{problem}[theorem]{Problem}
+\newtheorem{proposition}{Proposition}
+\newtheorem{property}{Property}
+\newtheorem{remark}[theorem]{Remark}
+\newtheorem{solution}[theorem]{Solution}
+\newtheorem{summary}[theorem]{Summary}
+%\newcommand{\argmax}{\operatornamewithlimits{argmax}}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{document}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\title{Human Daily Activity Recognition By Guassian Mixture Based HMM}
+
+\author{\normalsize{\authorblockN{He Zhang, Yongwei Wang}\\
+\authorblockA{Department of Electrical and Computer Engineering\\
+Project report of EECE 562}
+\thanks{Some of the work in this project is based on the paper: L. Piyathilaka and S. Kodagoda, "Gaussian mixture based HMM for human daily activity recognition using 3D skeleton features," \emph{2013 IEEE 8th Conference on Industrial Electronics and Applications (ICIEA)}, Melbourne, VIC, 2013, pp. 567-572.
+}}
+}
+
+\maketitle
+
+% To remove the p.1 in the abstract page
+\thispagestyle{empty}
+
+\vspace{-2cm}
+\renewcommand{\baselinestretch}{1.75}
+%%%%%%%%%%%
+\begin{abstract}
+Human activity recognition plays a significant role in artificial intelligence. However, automatic detection of human activities could be challenging since difference may exists among people even when they are doing the same activity, which is regarded as the individual nature of activities. In order to tackle this problem, in this project, we study a human activity detection model that users $3$-D skeleton features generated from an RGB-D sensor. In order to capture the multimodel nature of $3$-D positions of each skeleton joint, a Guassian Mixture Model (GMM) based Hidden Markov Model is implemented. Further, we apply the dynamic Bayessian network (DBN) to characterize the relationship between the activities and multiple joint positions, so that a more accurate human detection can be achieved. By exploiting the K-mean algorithm, and EM algorithm, we train the GMM based HMM for each activity by using the Cornell Activity Dataset. Once a sequence of skeleton features have been captured , these previously trained models produce likeligood estimation, from which the maximum is selected. By this scheme, a human daily activity recognition is achieved.
+\end{abstract}
+%\footnote{Most of the work in this project is based on the paper: L. Piyathilaka and S. Kodagoda, "Gaussian mixture based HMM for human daily activity recognition using 3D skeleton features," \emph{2013 IEEE 8th Conference on Industrial Electronics and Applications (ICIEA)}, Melbourne, VIC, 2013, pp. 567-572.}
+\newpage
+\section{Introduction}
+Automatic detection of human activities is now playing a significant role in Human Robot Interaction (HRI), which is a sub field in robotics. In HRI, the interaction among human and robots is studied. It combines knowledge of many interdisciplinary fields such as robotics, Artificial Intelligence, natural language processing and social sciences. The ability of robots to recognize the human activities and response correspondingly is the key for better interaction between human and robots. For example, by detecting the activities of an elderly person, a health care robot can remind them of their medications in appropriate times, or the robot can detect abnormal conditions of patients and notify the appropriate personnel.
+
+The invention of low cost RGB-D cameras like Microsoft Kinect can provide wealth of information  like depth. In addition, RGBD data from the Kinect sensor can be used to generate a Skeleton model of humans with semantic matching of $15$ body parts. The information of how different body parts move across each time period can well be used to characterize human activities. However, one critical challenge of automatic detection of human activities is the individual nature of the activities. That is, often two individuals might perform the same activity in two slightly different ways. These variations make it difficult to generalize a machine learning technique that can train on one person and test on another.
+
+In order to tackle the challenge of individual nature and well utilize the $3$-D skeleton position information provided by a RGB-D camera, we utilize Gaussian Mixture Model (GMM) based HMM for human activity detection. Guassian mixtures are capable of clustering data into different groups as a collection of multinomial Guassian distributions. By applying GMM based HMM for each skeleton joint, the impact of individual nature can be eliminated and more accurate detection can be achieved. Further, human actions are a collection of how different human body poses sequentially transfer at different time. So different skeleton joints should be jointly estimated to detect the human action. In this sense, we introduce the dynamic bayesian network (DBN) so that multiple observations of skeleton joints can be characterized to infer the hidden states of individual pose. Therefore, each body pose can be devised as a collection of multinomial distribution and HMM can model the intra slice dependencies between each time period. We implement the proposed GMM based HMM using the Byasian Network TooBox in Matlab and use Cornel activity Detection Dataset to train and test the accuracy of our model.
+\section{Review of DBN and GMM based HMM}
+We first make a review of DBN and GMM based HMM, so that we can have a better understanding of the human daily activity recognition problem.
+\subsection{Dynamic Bayesian Networks}
+In an HMM as we learnt in the course, the hidden state is represented in terms of a single discrete random variable, which can take on $M$ possible values, $Q_t\in \{1,\ldots,M\}$. However, in a dynamic bayesian network, the hidden state is represented in terms of a set of $N_h$ random variables, $Q_t^{(i)}$, $i\in\{1,\ldots,N_h\}$, each of which can be discrete or continuous. Similarly, the observation can be represented in terms of $N_o$ random variables, $Y_t^{(i)}$, each of which can be discrete or continuous.
+
+In an HMM, we  have to define the transition model, $P(Q_t|Q_{t-1})$, the observation model, $P(Y_t|Q_t)$, and the initial state distribution, $P(Q_1)$. In a DBN, $Q_t$, $Y_t$ represent sets of variables, so we define the corresponding conditional distributions using a two-slice temporal Bayes net (2TBN), which we shall denote by $B_\rightarrow$. Therefore, the transition and observation models are then defined as a product of the CPDs in the $2$TBN:
+\begin{equation*}
+P(Z_t|Z_{t-1})=\prod_{i=1}^NP(Z_t^{(i)}|\text{PA}(Z^{(i)}_t))
+\end{equation*}
+where $Z_t^{(i)}$ is the $i'$th node in slice $t$ (which may be hidden or observed, then we have $N=N_h+N_o$), and Pa$(Z^{(i)}_t)$ are the parents of $Z^{(i)}_t$, which may be in the same or previous time-slice. We then represent the unconditional initial state distribution , $P(Z^{(1:N)}_1)$, using a standard (one-slice) Bayes net, which we shall denote by $B_1$. Together, $B_1$ and $B_{\rightarrow}$ define the DBN. The joint distribution for a sequence of length $T$ can be can then be obtained as
+\begin{equation*}
+P(Z^{1:N}_{1:T})=\prod_{i=1}^NP_{B_1}(Z_1^{(i)}|\text{Pa}(Z_t^{(i)}))\times\prod_{t=2}^T\prod_{i=1}^NP_{B_\rightarrow}(Z^{(i)}_t|\text{Pa}(Z_t^{(i)}))
+\end{equation*}
+For a special case of HMM that we have learned in the course, it can then be denoted as
+\begin{equation*}
+P(Q_{1:T},Y_{1:T})=P(Q_1)P(Y_1|Q_1)\times\prod_{t=2}^TP(Q_t|Q_{t-1})P(Y_t|Q_t)
+\end{equation*}
+\subsection{HMMs with mixture-of-Gaussians output}
+\begin{figure}[h]
+    \centering
+    \includegraphics[ width = 8 cm]{ex.eps}
+    \vspace{-10pt}
+    \caption{An HMM with mixture of Gaussian output}
+    \label{System architecture}\vspace{-15pt}
+\end{figure}
+
+In many applications, it is common to represent $P(Y_t|Q_t=i)$ using a mixture of Guassian for each state $i$, we can explicitly model the mixture variable as shown in Figure 1. ($M_t$ and $Y_t$ are examples of transient nodes, since they do not have any children in the next time slice; by contrast, $Q_t$ is a persistent node.) The CPDs for the $Y_t$ and $M_t$ nodes are as follows:
+\begin{eqnarray*}
+P(Y_t=y_t|Q_t=i,M_t=m)&=&\mathcal{N}(y_t;\mu_{i,m},\Sigma_{i,m})\\
+P(M_t=m|Q_t=i)&=& C(i,m)
+\end{eqnarray*}
+The $i'$th row of $C$ encodes the mixture weights for state $i$.
+
+Assuming there is a single global pool of Gaussians, and each state corresponds to a different mixture over this pool. This is called a semi-continuous or tied-mixture HMM. In this case, there is no arc from $Q_t$ to $Y_t$, so the CPD of $Y_t$ becomes
+\begin{equation*}
+P(Y_t=y_t|M_t=m)=\mathcal{N}(y_t;\mu_m,\Sigma_m)
+\end{equation*}
+Then the effective observation model becomes
+\begin{eqnarray*}
+P(Y_t|Q_t=i)&=&\frac{\sum_mP(Y_t,M_t=m,Q_t=i)}{P(Q_t=i)}\\
+&=&\frac{\sum_mP(Q_t=i)P(M_t=m|Q_t=i)P(Y_t|M_t=m)}{P(Q_t=i)}\\
+&=&\sum_mP(M_t=m|Q_t=i)\mathcal{N}(y_t;\mu_m,\Sigma_m)
+\end{eqnarray*}
+\section{Human Activity Recognition Model}
+\subsection{Overall Process}
+\begin{figure}[h]
+    \centering
+    \includegraphics[ width = 10 cm]{recognition.eps}
+    \vspace{-10pt}
+    \caption{Human activity recognition process}
+    \label{System architecture}\vspace{-5pt}
+\end{figure}
+\begin{figure}[h]
+    \centering
+    \includegraphics[ width = 13 cm]{skeleton.eps}
+    \vspace{-10pt}
+    \caption{Skeleton visualization}
+    \label{System architecture}\vspace{-15pt}
+\end{figure}
+The overall process of the human activity recognition can be explained as follows: By applying DBN and GMM based HMM, we train separate HMM for each activity in the data-set. Once a sequence of skeleton features have been captured, these previously trained models produce likelihood estimation, from which the maximum is selected. For the HMM training, we apply the data set from Microsoft Kinect RGB-D camera, which is capable of simultaneously track $15$ body positions and their rotational matrices. These positions of body parts can then be used to construct the skeleton structure of a human body, which is shown in Figure 3. We assume that each human activity is a collection of different poses that evolves over time. So the human activities are a mixture of how different body parts are sequentially interacted, position information of body parts from the kinect's human skeleton can be used to construct the HMM for human activity detection.
+\subsection{HMM With Guassian Mixture Output}
+\begin{figure}[h]
+    \centering
+    \includegraphics[ width = 8 cm]{GMMHMM.eps}
+    \vspace{-10pt}
+    \caption{2-TBN representation of the GMM based HMM}
+    \label{System architecture}\vspace{-15pt}
+\end{figure}
+
+We illustrate HMM with Guassian Mixture output as a Dynamic Baysian network, shown in Figure 4. In this dynamic baysian network, $S_t$ represents the individual pose states at time $t$, which is the discrete hidden nodes. Since a certain human action is a collection of different poses that evolves over time, the discrete hidden nodes of individual pose form a first-order markov process. That is, the pose state at time $t$ will only be affected by the pose state at time $t-1$. Further, the nodes $J^t_i$ ($1\leq i\leq 14, 1\leq t\leq T$) represents the $i'$th skeleton joint position at time $t$. We also note that the joint positions at time $t$ are only directly determined by the pose state at time $t$, but not the the joint positions at time $t-1$. For each joint $J^t_i$, we introduce $M_i^t$ to represent mixture weight components for the mixture gaussian output of each joint.
+
+Specifically, in Figure 5 which shows the position information of the right hand when drinking water activity is performed by three people, few distinguishable clusters can be observed. However, despite of these clusters, few sub clusters can also be observed, which is due to the subject related variations in performing even the same activity. Therefore, this individual nature problem poses critical challenge for modeling such activities. In order to tackle this challenge, instead of applying unimodel Gaussians based HMM, we implement HMM based on Gaussian mixture model. A Gaussian mixture model is a weighted sum of $M$ component Gaussian densities as given by the equation:
+\begin{equation*}
+p(x|\lambda)=\sum_{i=1}^Mw_ig(x|\mu_i,\Sigma_i)
+\end{equation*}
+where $x$ is a D-dimensional continuous-valued data vector. In our problem, since we use the 3D skeleton joint position data set,  $x$ is a 3-dimensional continuous-valued data vector. $w_i, i=1,\ldots,M,$ are the mixture weights, and we also have
+\begin{equation*}
+p(x|\mu_i,\Sigma_i)=\frac{1}{(2\pi)^{D/2}\Sigma_i^{1/2}}\exp\{-\frac{1}{2}(x-\mu_i)'\Sigma_i^{-1}(x-\mu_i)\}
+\end{equation*}
+\begin{figure}[h]
+    \centering
+    \includegraphics[ width = 8 cm]{3D.eps}
+    \vspace{-10pt}
+    \caption{$(x,y,z)$ positions of the right hand when the action "drinking water" is performed}
+    \label{System architecture}\vspace{-15pt}
+\end{figure}
+For now, in our approach for human activity detection, we modeled a GMM based HMM as a Dynamic Baysian Network. In this model, the joint positions $\{J^t_i|t=1,\ldots,T; i=1,\ldots,14\}$ are the observations. The pose class $\{S_i|i=1,\ldots,N\}$ and the mixture weight components are hidden states.
+
+For an HMM, there are generally three parameters that define the model, $A$, $B$ and $\pi$. $A$ represent the transition matrix, $B$ represents the observation matrix, and $\pi$ represent the initial probability distribution of the pose state. We further define $s_t$ as the individual pose state at time $t$, which is drawn from the pose state class $\{S_1,S_2,\ldots,S_N\}$, in which $N$ is the number of states. We define $a_{i,j}$ as the pose state transition probability from state $i$ to state $j$, and $b_t(i)$ as the probability of the observation $O_t$ given the $i_{\text{th}}$ state of the pose nodes. The initial state distribution $\pi=\{\pi_i\}$ can be defined as
+\begin{equation*}
+\pi_i=P(s_1=S_i), \,\,\,\,i=1,2,\ldots,N
+\end{equation*}
+Then, the observation probability distribution is
+\begin{equation*}
+b_t(i)=P(O_t|s_t=S_i),\,\,\,\,i=1,\ldots,N, \,\,\,t=1,\ldots
+\end{equation*}
+$O_t$ is the joint observation at time $t$.
+
+Further, for the mixture of Guassian approach the observation probability can be modeled as
+\begin{equation*}
+b_t(i)=\prod_{n=1}^J\left[\sum_{m=1}^{M_i^n}w_{i,m}^nN(O_t^n,\mu_{i,m}^n,\Sigma_{i,m}^n)\right]
+\end{equation*}
+where $J$ represents the total number of joints, $O_t^n$ the observation vector of the $n^{\text{th}}$ node at time $t$, $M_i^n$ is the number of mixture components in the joint $n$ and state $i$, and $\mu_{i,m}^n,\Sigma_{i,m}^n,w_{i,m}^n$ are the mean, covariance matrix, and mixture weight for the $n^{\text{th}}$ joint, $i^{\text{th}}$ state, and $m^{\text{th}}$ Gaussian mixture component, respectively.
+
+The state transition probability distribution can be denoted as
+\begin{equation*}
+a_{i,j}=P(s_{t+1}=S_j|s_t=S_i)\,\,\,\,i,j=1,\ldots,N
+\end{equation*}
+Specifically, in this project we consider three individual pose states. Further, we note that human activities are done in specific order, so the additional constrained are placed on the state transition coefficient to make sure that large changes in the state indices do not occur. Due to the repetitive nature of the human activities we only allow swquential transition from state $1\rightarrow2\rightarrow3\rightarrow1$. Then the form of the state transition matrix is given as
+\begin{equation*}
+\left[\begin{array}{ccc}
+a_{11}&a_{12}&0\\
+0&a_{22}&a_{23}\\
+a_{31}&0&a_{33}
+\end{array}\right]
+\end{equation*}
+\section{Implementation}
+\subsection{Toolbox and Dataset}
+We use the Bayes Net Toolbox for Matlab to implement the GMM based HMM. Bayes Net Toolbox can be used to create and manipulate Bayesian networks, both static and dynamic Bayesian networks. In our implementation, we focus on the 2-TBN represented in Figure 2, so that the number of parameters that have to be defined can be reduced. For our model, we define three hidden states for pose node and three components for mixture node.
+
+Further, we employ the Cornell Activity Dataset 60 (CAD 60) to test our model. This dataset use the Microsoft Kinect RGBD sensor to record both depth and skeleton data of human daily activities. It is consisted of 20 unique activities done in five different environments: office, kitchen, bedroom, bathroom, and living room. Data is collected with four different people: two males and two females, recorded for about 45 seconds with each person. The dataset also consists of a random activity of each individual, which is not similar to any other activity done before.
+\subsection{Training GMM based HMM}
+When a DBN contains any hidden nodes, expectation maximization (EM) algorithm can be used to train parameters. In this project, we need to train the following parameters: the weight $w_{i,m}^n$, the mean $\mu_{i,m}^n$ and the covariance $\Sigma_{i,m}^n$ of the Gaussian mixture model for each joint and each pose state, the transition probability $a_{ij}$ for $i,j=1,2,3$. The training process is done for each activity separatively.
+
+When applying EM algorithm, it is well known that EM algorithm only converges to a local optimum due to the none convex nature of the optimization equation. Therefore, initial parameters need to be properly initialized to minimize the effect of local optimum issue. The initialization process is explained as follows: For each activity, we consider the GMM for each skeleton joint separatively. We first use the function $mk\_stochastic()$ to randomly initialize and normalize the transition matrix $A$ and the observation matrix $B$. The function $mk\_stochastic()$ is a matlab function that allows to learn HMM and infere with possibly noisy and uncertainty knowledge on hidden states.  Then, we collect skeleton observation data of persons that are used to train the GMM based HMM model, and apply K-mean algorithm to cluster the 3D skeleton position information into different groups and derive the parameters of the Gaussian mixture model. After the initialization procedure, we run the expectation maximization (EM) algorithm to further estimate the model parameters to optimize the likelihood of the training set.
+\subsection{Activity Recognition}
+Once a HMM is trained for each action class, then the idea is to select the most likely activity given the observation sequence, i.e., choose among all the activity models which best matches the observations. Therefore, it can be formulated as follows. Given the observation sequence of skeleton joints $O=O_1,O_2,\ldots,O_t,\ldots$ and the set of models for each activity $\{\lambda_a=(A_a,B_a,\pi_a)|a=1,2,\ldots,14\}$, in which $a$ represent the $a_{th}$ activity, how do we efficiently compute likelihood $P(O|\lambda_a)$, the probability of the sequence once the model is given. Intuitively, given $\lambda_a$, the likelihood can be calculated by the following equation:
+\begin{eqnarray*}
+P(O|\lambda_a)&=&\sum_{\text{all }S}P(O|S,\lambda_a)P(S|\lambda_a)\\
+&=&\sum_{s_1,s_2,\ldots,s_T}\pi_{s_1}b_{s_1}(O_1)a_{s_1s_2}b_{s_2}(O_2)\cdots a_{s_{T-1}s_T}b_{s_T}(O_T)
+\end{eqnarray*}
+
+Then the matching activity is chosen as
+\begin{equation*}
+a^*=\underset{a}{\text{argmax}}P(O|\lambda_a)
+\end{equation*}
+However, the computation of the likelihood by this way is on the order of $V\times T\times N^T$, in which $V$ is the number of activities. This calculation is too large to be solved. In order to tackle this problem, we introduce the forward algorithm to efficiently calculate the likelihood.
+
+Specifically, consider the forward variable $\alpha_t(i)$ defined as
+\begin{equation*}
+\alpha_t(i)=P(O_1,O_2,\ldots,O_t,s_t=S_i|\lambda)
+\end{equation*}
+i.e., the probability of the partial observation sequence, $O_1,O_2,\ldots,O_t$ (until time t) and state $S_i$ at time t, given the model $\lambda$. We can solve for $\alpha_t(i)$ inductively, as follows:
+
+1$)$Initialization:
+\begin{equation*}
+\alpha_1(i)=\pi_ib_i(O_1),\,\,\,\,1\leq i\leq N
+\end{equation*}
+
+2$)$Induction
+\begin{eqnarray*}
+\alpha_{t+1}(j)=b_j(O_{t+1})\sum_{j=1}^N\alpha_t(j)a_{ij}\,\,\,\,\,1&\leq& t\leq T-1\\
+1 &\leq& j\leq N
+\end{eqnarray*}
+
+3$)$Termination
+\begin{equation*}
+P(O|\lambda)=\sum_{i=1}^{N}\alpha_T(i)
+\end{equation*}
+
+By the forward algorithm, the likelihood can be derived more efficiently. For dataset with $V=14$ activities, $N=3$ states and $T=1000$ (average) observation sequence a total of $V\times N^2\times T=126000$ computation is required for activity recognition. Clearly, this amount of computation is modest as compared to the capabilities of most modern computers.
+
+\section{Experiment}
+\subsection{Experiment Scenarios}
+We have used two scenarios for examining the accuracy of the algorithm.
+
+1$)$Unseen person: i.e. Leave one out cross validation is performed, that is, model is trained on three of the four subjects and test the model on the data from the fourth person.
+
+2$)$Previously seen person:  One half of the dataset is used for training while other half is used for testing. The training data and testing data are not overlapped.
+\begin{table}
+\centering
+\begin{tabular}{| l | l | l | l | l | l |}
+\hline
+Activity	&Test on person 1	&Test on person 2&	Test on person 3&	Test on person 4	&Test on randomly\\ \hline
+Still&	100	&100&	100&	100&	100\\ \hline
+Talking on the phone&	100&	100&	100&	100&	78\\ \hline
+Writing on white board&	62	&100	&100	&100	&100\\ \hline
+Drinking water&	100&	100&	100&	100&	100\\ \hline
+Rinsing mouth with water	&100&	100&	100&	100&	100\\ \hline
+Brushing teeth&	38.5&	100&	100&	53&	58\\ \hline
+Wearing contact lense&	100&	36.5&	100&	13.5&	100\\ \hline
+Talking on the couch&	100&	35.5&	92.5&	100&	81.5\\ \hline
+Relaxing on the couch&	100&	23.5&	100&	0&	66.5\\ \hline
+Cooking (chopping)&	65.5&	100&	100&	100&	100\\ \hline
+Cooking (stirring)&	100&	100&	96.5&	100&	100\\ \hline
+Opening pill container&	100&	100&	35.5&	100&	100\\ \hline
+Working on computer&	100&	100&	100&	100&	100\\ \hline
+Overall Average&	89.7&	84.27&	94.2&	82.4&	91.1\\ \hline
+\end{tabular}
+\caption{Recognition accuracy with respect to individuals ($1^{\text{st}}$ joint data)}
+\end{table}
+\subsection{Experiment Results and Analysis}
+In the experiment, we first trained our GMM-HMM model using first half of the dataset ($T/2=100$) of each person’s activity recordings. After training each activity separately, we obtained 13 probability transition matrices A, and observation transition probability matrices B. Then, we randomly selected data from second half of the dataset to test our recognition accuracy. Specifically, to choose samples randomly, we first randomly selected a person from the four people. Next, we chose the starting point of the sample using a random number, and length of testing sequence is a quarter of dataset ($T/4=50$), so that the selection operation is equivalent to adopt a sliding window with $50\%$ overlapping. The number of random samples for training is 200. Finally, for each testing sample, we respectively calculated likelihood of this observation with estimated parameters from each activity. The likelihood was obtained using forward algorithm. The activity class with the largest likelihood is supposed to be the true activity.
+
+
+Table I shows the results of the recognition accuracy just using features from the first skeleton. The number of pose state we used was $3$, and joint state number is $5$. The average overall accuracy is $91\%$ if all testing samples are randomly selected from four persons. To evaluate individual recognition performance, we further conducted experiments where samples were just from one single person. We find testing samples from person $3$ achieves the highest accuracy ($94.2\%$) while test on person 4 gives the worst performance ($82.4\%$). The result that recognition accuracy varies amongst individuals indicates a possible relationship between different people and recognition performance. If we could include more people in our training step, probably we could get a better result since more individuals’ diversities are considered.
+
+
+This recognition result is better than the one given in our referenced paper. We think the main reason is that we changed joint state number from 3 in the paper to be 5. The reason that we made the change was that we could not explain that three states should give the optimum performance, while intuitively some other states could also yield a same, if not better performance. The following figure shows an approximate relationship between recognition accuracy and several different numbers of joint states or pose states. The joint number chosen from 3 to 7, and pose number selected as 2,3,or 4, is more likely to yield a higher accuracy.
+\begin{figure}[h]
+    \centering
+    \includegraphics[ width = 12 cm]{performance_com.eps}
+    \vspace{-10pt}
+    \caption{Simulation results of recognition accuracy with the number of joint state}
+    \label{System architecture}\vspace{-15pt}
+\end{figure}
+
+Another factor we noticed that might affect the recognition accuracy is the selection of skeleton joints. Table II gives the recognition accuracy of individuals using measurement from the second skeleton joints. The experiment was conducted with the same parameters as used in Table I. By inspection Table I and Table II, we find the result is surprisingly better than the first one, where we have an average recognition accuracy of $95.6\%$. One possible explanation is this skeleton probably conveys more information of activity features so that features themselves could have better distinctions.
+
+\begin{table}
+\centering
+\begin{tabular}{| l | l | l | l | l | l |}
+\hline
+Activity&	Test on person 1&	Test on person 2&	Test on person 3&	Test on person 4&	Test on randomly\\ \hline
+Still&	100	&100&	100&	100&	100\\ \hline
+Talking on the phone&	100&	100&	100&	100&	100\\ \hline
+Writing on white board	&100&	100&	100&	100&	100\\ \hline
+Drinking water&	100&	100&	100&	100&	100\\ \hline
+Rinsing mouth with water&	100&	100	&100&	100&	85.5\\ \hline
+Brushing teeth&	83	&100	&100&	100	&80.5\\ \hline
+Wearing contact lense&	100	&100	&100	&100	&100\\ \hline
+Talking on the couch&	100&	100&	100	&100	&100\\ \hline
+Relaxing on the couch&	100&	100&	100&	100	&75.5\\ \hline
+Cooking (chopping)	&100&	100&	100	&100	&100\\ \hline
+Cooking (stirring)&	100	&100&	100	&100&	100\\ \hline
+Opening pill container&	100&	100&	100&	100&	100 \\ \hline
+Working on computer&	100	&100	&100	&100&	100\\ \hline
+Overall Average	&98.7	&100	&100	&100	&95.6\\ \hline
+\end{tabular}
+\caption{Recognition accuracy with respect to individuals ($2^{\text{nd}}$ joint data)}
+\end{table}
+
+However, in the ‘unseen case’ as demonstrated in the referenced paper, our averaged recognition result (ranging from around $20\%$ to $30\%$) is inferior to their results ($78\%$). Although we had a low averaged recognition accuracy, the recognition accuracy could achieve $100\%$ for some activities, such as ‘Rinsing mouth with water’ and ‘Cooking (stirring)’. Future work could turn to analyze the relationship of the same activity amongst different individuals so that we could achieve higher classification accuracies.
+
+\section{Conclusion}
+In this report, we studied the GMM-HMM model for human activity recognition. Instead of using features from all skeleton joints mentioned in the referenced paper, we could achieve even higher activity recognition accuracy with a single skeleton node with a different joint state number. Then we conducted experiments to further investigate the relationship between recognition accuracy and different choices of state numbers. In our case, the joint number from $3$ to $7$, and pose number such as $2$,$3$,or $4$,tends to give a higher performance. Finally, we explored recognition performance with respect to different choices of skeleton joints—some skeleton joint simply shows an obviously superior performance (skeleton $2$ in our case) than the other joints. This could provide insight into selecting more suitable joints for recognition purposes.
+
+\begin{thebibliography}{99}
+\bibitem{initial}L. Piyathilaka and S. Kodagoda, "Gaussian mixture based HMM for human daily activity recognition using 3D skeleton features," \emph{2013 IEEE 8th Conference on Industrial Electronics and Applications (ICIEA)}, Melbourne, VIC, 2013, pp. 567-572.
+\bibitem{2}Ghahramani, Z. 1998 Learning dynamic Bayesian networks. In \emph{Adaptive Processing of
+Sequences and Data Structures}. Lecture Notes in Artifical Intelligence (ed. M. Gori and
+C. L. Giles), pp. 168–197. Springer.
+\bibitem{8}Z. Ghahramani, "An introduction to hidden Markov models and
+Bayesian networks," \emph{Int. J. Pattern Recognition and Artificial
+Intelligience}, vol. 15, no. 1, pp. 9–42, 2001.
+\bibitem{3}OpenNI organization, "OpenNI User Guide", November, 2010, Last viewed 19-01-2011 11:32, http://www.openni.org/documentation
+
+\bibitem{4}
+PrimeSense Inc., Prime Sensor™ NITE 1.3 Algorithms notes,
+2010,
+Last viewed 19-01-2011 15:34,
+http://www.primesense.com
+\bibitem{5}Cornell Robot Learning Lab, http://pr.cs.cornell.edu/humanactivities/data.php
+\bibitem{6}Dynamic Baysian Network Toolbox, https://www.cs.ubc.ca/~murphyk/Software/
+\end{thebibliography}
+\end{document}
